@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110">
+  <defs>
+    <linearGradient id="gwood" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9713c"/><stop offset="1" stop-color="#7a4a26"/>
+    </linearGradient>
+    <linearGradient id="glid" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3cf6e"/><stop offset="1" stop-color="#d8a53d"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="60" cy="100" rx="46" ry="8" fill="rgba(0,0,0,.25)"/>
+  <rect x="18" y="46" width="84" height="46" rx="8" fill="url(#gwood)"/>
+  <path d="M14 46 Q60 12 106 46 L106 54 Q60 24 14 54 Z" fill="url(#glid)"/>
+  <rect x="14" y="60" width="92" height="8" fill="#e8b84a"/>
+  <rect x="14" y="80" width="92" height="8" fill="#e8b84a"/>
+  <circle cx="60" cy="70" r="9" fill="#e8b84a"/>
+  <circle cx="60" cy="70" r="4" fill="#8a5a10"/>
+  <g opacity=".9">
+    <path d="M35 8 L38 16 L46 17 L40 22 L42 30 L35 25 L28 30 L30 22 L24 17 L32 16 Z" fill="#ffe27a"/>
+    <path d="M84 4 L86 10 L92 11 L87 15 L88 21 L84 17 L79 21 L81 15 L76 11 L82 10 Z" fill="#ffe27a"/>
+  </g>
+</svg>

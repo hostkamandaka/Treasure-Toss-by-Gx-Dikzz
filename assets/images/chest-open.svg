@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100">
+  <defs>
+    <linearGradient id="gwood2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9713c"/><stop offset="1" stop-color="#7a4a26"/>
+    </linearGradient>
+    <linearGradient id="glid2" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f3cf6e"/><stop offset="1" stop-color="#d8a53d"/>
+    </linearGradient>
+    <radialGradient id="innerglow" cx="0.5" cy="0.5" r="0.6">
+      <stop offset="0" stop-color="#fff6cf"/>
+      <stop offset="1" stop-color="#fff6cf" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="60" cy="94" rx="50" ry="6" fill="rgba(0,0,0,.28)"/>
+
+  <!-- open lid tilted back behind the box -->
+  <g transform="rotate(-115 14 46)">
+    <path d="M8 42 Q60 6 112 42 L112 50 Q60 20 8 50 Z" fill="url(#glid2)"/>
+    <rect x="8" y="44" width="104" height="6" fill="#e8b84a" opacity=".8"/>
+  </g>
+
+  <!-- box body -->
+  <rect x="12" y="42" width="96" height="42" rx="6" fill="url(#gwood2)"/>
+
+  <!-- glow + sparkle inside -->
+  <ellipse cx="60" cy="46" rx="46" ry="14" fill="url(#innerglow)"/>
+  <path d="M60 34 L64 44 L74 46 L64 49 L60 60 L56 49 L46 46 L56 44 Z" fill="#fff6cf"/>
+
+  <rect x="12" y="56" width="96" height="7" fill="#e8b84a"/>
+  <rect x="12" y="76" width="96" height="7" fill="#e8b84a"/>
+  <rect x="8" y="42" width="8" height="42" fill="#e8b84a"/>
+  <rect x="104" y="42" width="8" height="42" fill="#e8b84a"/>
+  <circle cx="60" cy="63" r="8" fill="#e8b84a"/>
+  <circle cx="60" cy="63" r="3.4" fill="#5c3419"/>
+</svg>
