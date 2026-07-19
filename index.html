@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Treasure Toss: Pirate Chest</title>
+<style>
+  :root{
+    --purple-dark:#2a1458; --purple:#5b2ea6; --purple-light:#8e5cd9;
+    --cyan-deep:#0e8fa3; --cyan:#20c4d8; --gold:#ffc94a; --gold-dark:#c9861a;
+    --red:#ff5b5b; --green:#4ade80;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-touch-callout:none;}
+  html,body{margin:0; padding:0; width:100%; height:100%; overflow:hidden; font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#0a0418; touch-action:none;}
+  img{-webkit-user-drag:none; -khtml-user-drag:none; -moz-user-drag:none; user-drag:none; -webkit-touch-callout:none; pointer-events:none; -webkit-user-select:none; user-select:none;}
+  #app{position:relative; width:100%; height:100%; max-width:520px; margin:0 auto; overflow:hidden; background:#2a1458;}
+
+  #bg-image{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;}
+
+  .star{position:absolute; background:#fff; border-radius:50%; opacity:.8; animation:twinkle 2.2s ease-in-out infinite; z-index:1;}
+  @keyframes twinkle{0%,100%{opacity:.2;transform:scale(.8);}50%{opacity:1;transform:scale(1.3);}}
+  .cloud{position:absolute; opacity:.35; filter:blur(1px); animation:drift linear infinite; z-index:1;}
+  @keyframes drift{from{transform:translateX(-60px);}to{transform:translateX(60px);}}
+
+  .palm{position:absolute; z-index:6; width:70px; filter:drop-shadow(0 4px 4px rgba(0,0,0,.25)); transform-origin:bottom center; animation:sway 3.6s ease-in-out infinite;}
+  @keyframes sway{0%,100%{transform:rotate(-2deg);}50%{transform:rotate(2deg);}}
+
+  .wm{position:absolute; bottom:8px; right:12px; font-size:11px; color:rgba(255,255,255,.55); letter-spacing:.5px; z-index:50; pointer-events:none; font-weight:600;}
+
+  .screen{position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:flex-start; padding:24px 20px; overflow-y:auto; z-index:8;}
+  .screen.active{display:flex;}
+
+  .logo-wrap{margin-top:5vh; text-align:center; z-index:10;}
+  .logo-chest-img{width:110px; height:100px; filter:drop-shadow(0 8px 14px rgba(0,0,0,.45)); animation:bob 2.4s ease-in-out infinite;}
+  @keyframes bob{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+  .game-title{font-size:29px; font-weight:800; color:#fff; margin:8px 0 2px; text-shadow:0 3px 0 rgba(0,0,0,.25); letter-spacing:.5px;}
+  .game-title span{color:var(--gold);}
+  .game-sub{font-size:13px; color:rgba(255,255,255,.75); margin-bottom:4px; font-weight:600;}
+  .dev-tag{font-size:11px; color:rgba(255,255,255,.5); margin-bottom:20px; letter-spacing:.5px;}
+
+  .menu-btns{width:100%; max-width:320px; display:flex; flex-direction:column; gap:12px; margin-top:6px; z-index:10;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:8px; padding:14px 18px; border-radius:16px; border:none; cursor:pointer; font-size:16px; font-weight:700; color:#fff; background:linear-gradient(180deg,var(--purple-light),var(--purple)); box-shadow:0 4px 0 rgba(0,0,0,.25), 0 6px 12px rgba(0,0,0,.2); transition:transform .08s;}
+  .btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,.25);}
+  .btn.primary{background:linear-gradient(180deg,#ffdd6b,var(--gold-dark)); color:#4a2b00; box-shadow:0 4px 0 #8a5c0f, 0 6px 12px rgba(0,0,0,.25);}
+  .btn.ghost{background:rgba(255,255,255,.12); box-shadow:none; border:1px solid rgba(255,255,255,.25);}
+  .btn.small{padding:10px 14px; font-size:14px;}
+  .btn:disabled{opacity:.4; pointer-events:none;}
+
+  .panel-header{width:100%; display:flex; align-items:center; gap:10px; margin-bottom:18px; z-index:10;}
+  .back-btn{width:38px; height:38px; border-radius:12px; background:rgba(255,255,255,.15); border:none; color:#fff; font-size:18px; display:flex; align-items:center; justify-content:center; cursor:pointer;}
+  .panel-title{color:#fff; font-size:20px; font-weight:800;}
+  .card{width:100%; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); border-radius:16px; padding:16px; margin-bottom:12px; color:#fff; z-index:10;}
+  .card p{margin:6px 0; font-size:14px; line-height:1.5; color:rgba(255,255,255,.9);}
+  .card h3{margin:0 0 8px; font-size:15px; color:var(--gold);}
+
+  .lb-row{display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.08); border-radius:12px; padding:10px 14px; margin-bottom:8px; color:#fff; width:100%; z-index:10;}
+  .lb-delete-btn{width:32px; height:32px; min-width:32px; border-radius:10px; background:rgba(255,91,91,.2); border:1px solid rgba(255,91,91,.5); color:#ff8a8a; font-size:14px; display:none; align-items:center; justify-content:center; cursor:pointer; margin-left:8px;}
+  .lb-row.reset-mode .lb-delete-btn{display:flex;}
+  .lb-rank{width:26px; font-weight:800; color:var(--gold);}
+  .lb-name{flex:1; font-weight:600; font-size:14px; text-align:left; margin-left:6px;}
+  .lb-score{font-weight:800; font-size:14px; color:var(--gold);}
+  .empty-note{color:rgba(255,255,255,.6); font-size:13px; text-align:center; margin-top:20px; z-index:10;}
+
+  .profile-item{width:100%; display:flex; align-items:center; justify-content:space-between; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18); border-radius:14px; padding:12px 16px; margin-bottom:10px; cursor:pointer; color:#fff; z-index:10;}
+  .profile-item:active{background:rgba(255,255,255,.2);}
+  .profile-name{font-weight:700; font-size:15px;}
+  .profile-meta{font-size:12px; color:rgba(255,255,255,.65); margin-top:2px;}
+  .profile-score{font-weight:800; color:var(--gold); font-size:15px;}
+
+  .modal-overlay{position:absolute; inset:0; background:rgba(10,4,25,.75); display:none; align-items:center; justify-content:center; z-index:100; padding:24px;}
+  .modal-overlay.active{display:flex;}
+  .modal-box{background:linear-gradient(180deg,#4a2a8a,#2c1458); border-radius:20px; padding:24px 20px; width:100%; max-width:320px; text-align:center; border:1px solid rgba(255,255,255,.15); box-shadow:0 10px 30px rgba(0,0,0,.4);}
+  .modal-box h3{color:#fff; margin:0 0 14px; font-size:17px;}
+  .modal-box input{width:100%; padding:12px 14px; border-radius:12px; border:none; font-size:15px; margin-bottom:14px; text-align:center; outline:none;}
+  .modal-actions{display:flex; gap:10px;}
+  .modal-actions .btn{flex:1;}
+
+  /* ================= GAME SCREEN ================= */
+  #screen-game{padding:0;}
+  .game-hud{position:absolute; top:0; left:0; right:0; z-index:30; padding:14px; display:flex; flex-direction:column; gap:8px; pointer-events:none;}
+  .hud-top{display:flex; align-items:center; gap:10px;}
+  .hud-round-btn{width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.18); border:2px solid rgba(255,255,255,.3); display:flex; align-items:center; justify-content:center; font-size:17px; color:#fff; pointer-events:auto; cursor:pointer;}
+  .hud-pill{background:rgba(255,255,255,.92); border-radius:20px; padding:6px 14px 6px 10px; display:flex; align-items:center; gap:6px; font-weight:800; font-size:14px; color:#5b2ea6; box-shadow:0 3px 6px rgba(0,0,0,.2);}
+  .hud-pill img{width:18px; height:18px;}
+  .hud-score{margin-left:auto; text-align:right; color:#fff;}
+  .hud-score .val{font-size:20px; font-weight:900; text-shadow:0 2px 4px rgba(0,0,0,.3);}
+  .hud-score .lbl{font-size:10px; opacity:.8; letter-spacing:1px;}
+  .energy-wrap{width:100%; height:14px; background:rgba(0,0,0,.35); border-radius:8px; overflow:hidden; border:2px solid rgba(255,255,255,.3);}
+  .energy-bar{height:100%; width:100%; background:linear-gradient(90deg,#ffd23f,var(--gold-dark)); border-radius:6px; transition:width .25s ease;}
+
+  .combo-text{position:absolute; top:88px; left:50%; transform:translateX(-50%) scale(.6); z-index:35; font-size:26px; font-weight:900; color:#fff; text-shadow:0 3px 6px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .15s, transform .15s; white-space:nowrap;}
+  .combo-text.show{opacity:1; transform:translateX(-50%) scale(1);}
+
+  #playfield{position:absolute; inset:0; overflow:hidden;}
+
+  .falling-item{position:absolute; width:42px; height:42px; z-index:15; filter:drop-shadow(0 4px 5px rgba(0,0,0,.35)); transform:translate(-50%,-50%);}
+  .falling-item img{width:100%; height:100%;}
+
+  .popup{position:absolute; font-weight:900; font-size:18px; z-index:32; pointer-events:none; animation:popup-rise 0.9s ease-out forwards; transform:translate(-50%,-50%);}
+  @keyframes popup-rise{0%{opacity:1; transform:translate(-50%,-50%) scale(.8);}30%{transform:translate(-50%,-64%) scale(1.1);}100%{opacity:0; transform:translate(-50%,-96%) scale(1);}}
+  .popup.good{color:#baff6b;}
+  .popup.bad{color:#ff6b6b;}
+  .popup.neutral{color:#dbe6ff;}
+
+  /* ---------- stage: character + chest (grounded, no floating) ---------- */
+  .stage{position:absolute; left:50%; bottom:16%; transform:translateX(-50%); z-index:12; display:flex; flex-direction:column; align-items:center;}
+  .char-img{width:118px; height:auto; margin-bottom:-34px; position:relative; z-index:1;}
+  .chest-wrap{position:relative; width:170px; height:150px; z-index:2;}
+  .chest-glow{position:absolute; left:50%; top:55%; width:190px; height:190px; transform:translate(-50%,-50%); border-radius:50%; z-index:-1; background:radial-gradient(circle, rgba(255,201,74,.4) 0%, rgba(255,201,74,0) 70%); opacity:0; transition:opacity .2s;}
+  .chest-glow.on{opacity:1;}
+  .chest-img{width:100%; height:100%; transition:transform .12s;}
+
+  .tap-hint{position:absolute; bottom:2%; left:50%; transform:translateX(-50%); z-index:20; color:rgba(255,255,255,.9); font-size:12px; font-weight:700; background:rgba(0,0,0,.28); padding:7px 16px; border-radius:20px; pointer-events:none; animation:fadeout-hint 3.8s forwards;}
+  @keyframes fadeout-hint{0%,70%{opacity:1;}100%{opacity:0;}}
+
+  .press-ring{position:absolute; width:60px; height:60px; border-radius:50%; border:3px solid rgba(255,255,255,.85); z-index:11; pointer-events:none; animation:ring-pulse .5s ease-out forwards; transform:translate(-50%,-50%);}
+  @keyframes ring-pulse{0%{transform:translate(-50%,-50%) scale(.3);opacity:1;}100%{transform:translate(-50%,-50%) scale(1.7);opacity:0;}}
+
+  .shard{position:absolute; width:8px; height:8px; border-radius:2px; z-index:33; pointer-events:none;}
+
+  .overlay{position:absolute; inset:0; background:rgba(8,3,20,.85); z-index:60; display:none; align-items:center; justify-content:center; flex-direction:column; padding:24px; text-align:center;}
+  .overlay.active{display:flex;}
+  .overlay h2{color:#fff; font-size:26px; margin:6px 0 2px;}
+  .overlay .go-emoji{font-size:52px;}
+  .overlay .final-score{font-size:38px; font-weight:900; color:var(--gold); margin:6px 0 2px; text-shadow:0 3px 6px rgba(0,0,0,.4);}
+  .overlay .best-note{font-size:13px; color:rgba(255,255,255,.75); margin-bottom:18px;}
+  .overlay .overlay-btns{display:flex; flex-direction:column; gap:10px; width:100%; max-width:280px;}
+  .new-best-badge{background:var(--gold); color:#4a2b00; font-weight:800; font-size:12px; padding:4px 12px; border-radius:20px; margin-bottom:10px; display:none;}
+  .new-best-badge.show{display:inline-block;}
+
+  .screen-flash{position:absolute; inset:0; background:rgba(255,60,60,.35); z-index:40; opacity:0; pointer-events:none;}
+  .screen-flash.hit{animation:flash-anim .35s ease-out;}
+  @keyframes flash-anim{0%{opacity:1;}100%{opacity:0;}}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <img id="bg-image" src="assets/images/background.svg" alt="">
+  <div id="starfield"></div>
+  <div id="cloudfield"></div>
+
+  <!-- ============ MENU SCREEN ============ -->
+  <div class="screen active" id="screen-menu">
+    <div class="logo-wrap">
+      <img class="logo-chest-img" src="assets/images/logo.svg" alt="logo">
+      <div class="game-title">TREASURE TOSS<br><span>Pirate Chest</span></div>
+      <div class="game-sub">Buka peti, tangkep harta, hindari bom!</div>
+      <div class="dev-tag">by Gx Dikzz Dev</div>
+    </div>
+    <div class="menu-btns">
+      <button class="btn primary" id="btn-start">🎮 Mulai Game</button>
+      <button class="btn" id="btn-continue">⏩ Lanjutkan</button>
+      <button class="btn ghost" id="btn-score">🏆 Skor</button>
+      <button class="btn ghost" id="btn-help">❓ Bantuan</button>
+      <button class="btn ghost" id="btn-contact">✉️ Kontak Dev</button>
+    </div>
+  </div>
+
+  <!-- ============ CONTINUE / PROFILE LIST ============ -->
+  <div class="screen" id="screen-continue">
+    <div class="panel-header">
+      <button class="back-btn" data-back>←</button>
+      <div class="panel-title">Lanjutkan</div>
+    </div>
+    <div id="profile-list" style="width:100%;"></div>
+  </div>
+
+  <!-- ============ SCORE / LEADERBOARD ============ -->
+  <div class="screen" id="screen-score">
+    <div class="panel-header">
+      <button class="back-btn" data-back>←</button>
+      <div class="panel-title">🏆 Papan Skor</div>
+      <button class="btn ghost small" id="btn-reset-mode" style="margin-left:auto; padding:8px 12px;">🗑 Reset</button>
+    </div>
+    <div id="score-list" style="width:100%;"></div>
+  </div>
+
+  <!-- ============ RESET CONFIRM MODAL ============ -->
+  <div class="modal-overlay" id="modal-reset-confirm">
+    <div class="modal-box">
+      <h3>Hapus skor <span id="reset-target-name"></span>?</h3>
+      <p style="color:rgba(255,255,255,.75); font-size:13px; margin:-6px 0 16px;">Nama & skor pemain ini akan dihapus permanen dari perangkat ini.</p>
+      <div class="modal-actions">
+        <button class="btn ghost small" id="btn-reset-cancel">Batal</button>
+        <button class="btn primary small" id="btn-reset-confirm" style="background:linear-gradient(180deg,#ff8a8a,#c0392b); color:#fff; box-shadow:0 4px 0 #8a281a, 0 6px 12px rgba(0,0,0,.25);">Hapus</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ BANTUAN ============ -->
+  <div class="screen" id="screen-help">
+    <div class="panel-header">
+      <button class="back-btn" data-back>←</button>
+      <div class="panel-title">❓ Bantuan</div>
+    </div>
+    <div class="card">
+      <h3>Cara Main</h3>
+      <p>👉 <b>Tekan &amp; tahan</b> di mana saja pada layar untuk <b>membuka peti</b>.</p>
+      <p>👉 <b>Lepas</b> jari untuk <b>menutup peti</b>.</p>
+      <p>💰 Harta dilempar dari kiri &amp; kanan menuju peti di tengah. Buka peti pas harta nyampe supaya tertangkap.</p>
+      <p>💣 Bom itu bahaya! Pastikan peti <b>tertutup</b> saat bom lewat, jangan sampai tertangkap.</p>
+      <p>⚠️ Kalau harta bagus sampai <b>kelewatan</b> (gak sempet ketangkep), energi ikut berkurang. Jangan sering ketinggalan!</p>
+      <p>🔥 Tangkapan beruntun bikin <b>combo</b> naik dan skor makin gede.</p>
+      <p>📏 Skor akhir = jarak tempuh + koin yang berhasil dikumpulkan.</p>
+    </div>
+  </div>
+
+  <!-- ============ KONTAK DEV ============ -->
+  <div class="screen" id="screen-contact">
+    <div class="panel-header">
+      <button class="back-btn" data-back>←</button>
+      <div class="panel-title">✉️ Kontak Dev</div>
+    </div>
+    <div class="card">
+      <h3>Gx Dikzz Dev</h3>
+      <p>Ada bug, saran, atau mau request fitur? Hubungi lewat:</p>
+      <p>📸 Instagram: <b>@gxdikzz</b></p>
+      <p>💬 WhatsApp: <b>tulis nomor lo di sini</b></p>
+      <p>📩 Email: <b>tulis email lo di sini</b></p>
+    </div>
+    <div class="card">
+      <p style="text-align:center; opacity:.7;">Ganti detail kontak di atas sesuai punya lo ya, Bang.</p>
+    </div>
+  </div>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <div class="screen" id="screen-game">
+    <div class="screen-flash" id="screen-flash"></div>
+    <div id="playfield">
+      <div class="stage">
+        <img class="char-img" src="assets/images/character.svg" alt="karakter">
+        <div class="chest-wrap">
+          <div class="chest-glow" id="chest-glow"></div>
+          <img class="chest-img" id="chest-img" src="assets/images/chest-closed.svg" alt="peti">
+        </div>
+      </div>
+      <div class="tap-hint" id="tap-hint">Tahan layar = buka peti • Lepas = tutup peti</div>
+    </div>
+
+    <div class="game-hud">
+      <div class="hud-top">
+        <button class="hud-round-btn" id="btn-pause">⏸</button>
+        <div class="hud-pill">
+          <img src="assets/images/item-coin.svg" alt="koin">
+          <span id="hud-coins">0</span>
+        </div>
+        <div class="hud-score">
+          <div class="val" id="hud-score">0</div>
+          <div class="lbl">SKOR</div>
+        </div>
+        <button class="hud-round-btn" id="btn-mute" style="margin-left:6px;">🔊</button>
+      </div>
+      <div class="energy-wrap"><div class="energy-bar" id="energy-bar"></div></div>
+    </div>
+
+    <div class="combo-text" id="combo-text"></div>
+
+    <div class="overlay" id="overlay-pause">
+      <div class="go-emoji">⏸️</div>
+      <h2>Jeda</h2>
+      <div class="overlay-btns">
+        <button class="btn primary" id="btn-resume">▶ Lanjut Main</button>
+        <button class="btn ghost" id="btn-quit">🏠 Menu Utama</button>
+      </div>
+    </div>
+
+    <div class="overlay" id="overlay-gameover">
+      <div class="go-emoji">💀</div>
+      <h2>Game Over</h2>
+      <div class="new-best-badge" id="new-best-badge">⭐ Rekor Baru!</div>
+      <div class="final-score" id="final-score">0</div>
+      <div class="best-note" id="best-note">Skor terbaik: 0</div>
+      <div class="overlay-btns">
+        <button class="btn primary" id="btn-retry">🔁 Main Lagi</button>
+        <button class="btn ghost" id="btn-gohome">🏠 Menu Utama</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NAME INPUT MODAL ============ -->
+  <div class="modal-overlay" id="modal-name">
+    <div class="modal-box">
+      <h3>🏴‍☠️ Siapa nama lo, Kapten?</h3>
+      <input type="text" id="input-name" maxlength="16" placeholder="Ketik nama...">
+      <div class="modal-actions">
+        <button class="btn ghost small" id="btn-cancel-name">Batal</button>
+        <button class="btn primary small" id="btn-confirm-name">Mulai!</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="wm">Gx Dikzz Dev</div>
+
+  <!-- ============ AUDIO ELEMENTS (asset files) ============ -->
+  <audio id="aud-bgm" src="assets/audio/bgm-loop.wav" loop preload="auto"></audio>
+  <audio id="aud-coin" src="assets/audio/sfx-coin.wav" preload="auto"></audio>
+  <audio id="aud-enter" src="assets/audio/sfx-treasure-enter.wav" preload="auto"></audio>
+  <audio id="aud-discard" src="assets/audio/sfx-treasure-discard.wav" preload="auto"></audio>
+  <audio id="aud-safe" src="assets/audio/sfx-safe.wav" preload="auto"></audio>
+  <audio id="aud-bomb" src="assets/audio/sfx-bomb.wav" preload="auto"></audio>
+  <audio id="aud-ui" src="assets/audio/sfx-ui-click.wav" preload="auto"></audio>
+  <audio id="aud-gameover" src="assets/audio/sfx-gameover.wav" preload="auto"></audio>
+  <audio id="aud-newbest" src="assets/audio/sfx-newbest.wav" preload="auto"></audio>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ================= AUDIO (uses real asset files under assets/audio) ================= */
+  const Audio_ = (function(){
+    let muted = false;
+    const bgm = document.getElementById("aud-bgm");
+    bgm.volume = 0.35;
+    const sfx = {
+      coin: document.getElementById("aud-coin"),
+      enter: document.getElementById("aud-enter"),
+      discard: document.getElementById("aud-discard"),
+      safe: document.getElementById("aud-safe"),
+      bomb: document.getElementById("aud-bomb"),
+      ui: document.getElementById("aud-ui"),
+      gameover: document.getElementById("aud-gameover"),
+      newbest: document.getElementById("aud-newbest"),
+    };
+    function play(el){
+      if(muted || !el) return;
+      // clone so overlapping catches don't cut each other off
+      const node = el.cloneNode(true);
+      node.volume = el.id === "aud-bomb" ? 0.6 : 0.55;
+      node.play().catch(()=>{});
+    }
+    function unlock(){
+      // called on first user gesture to satisfy mobile autoplay policies
+      bgm.play().then(()=> bgm.pause()).catch(()=>{});
+    }
+    function startMusic(){ if(!muted){ bgm.currentTime = 0; bgm.play().catch(()=>{}); } }
+    function stopMusic(){ bgm.pause(); }
+    function toggleMute(){
+      muted = !muted;
+      if(muted) bgm.pause(); else bgm.play().catch(()=>{});
+      return !muted;
+    }
+    return {
+      unlock, startMusic, stopMusic, toggleMute,
+      coinCatch:()=>play(sfx.coin),
+      treasureEnter:()=>play(sfx.enter),
+      treasureDiscard:()=>play(sfx.discard),
+      safeBlock:()=>play(sfx.safe),
+      bombExplode:()=>play(sfx.bomb),
+      uiClick:()=>play(sfx.ui),
+      gameOverJingle:()=>play(sfx.gameover),
+      newBest:()=>play(sfx.newbest),
+    };
+  })();
+
+  /* ================= STORAGE ================= */
+  const STORAGE_KEY = "peti_harta_profiles_v1";
+  function loadProfiles(){ try{ const raw = localStorage.getItem(STORAGE_KEY); return raw?JSON.parse(raw):[]; }catch(e){ return []; } }
+  function saveProfiles(list){ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+  function getProfile(name){ return loadProfiles().find(p=>p.name.toLowerCase()===name.toLowerCase()); }
+  function upsertProfile(name, patch){
+    const list = loadProfiles();
+    let p = list.find(x=>x.name.toLowerCase()===name.toLowerCase());
+    if(!p){ p = { name, highScore:0, highCoins:0, lastPlayed:Date.now() }; list.push(p); }
+    Object.assign(p, patch, { lastPlayed:Date.now() });
+    saveProfiles(list);
+    return p;
+  }
+  let currentPlayer = null;
+
+  /* ================= NAV ================= */
+  const screens = document.querySelectorAll(".screen");
+  function showScreen(id){ screens.forEach(s=>s.classList.toggle("active", s.id===id)); }
+  document.querySelectorAll("[data-back]").forEach(b=> b.addEventListener("click", ()=>{ Audio_.uiClick(); showScreen("screen-menu"); }));
+  document.getElementById("btn-help").onclick = ()=>{ Audio_.uiClick(); showScreen("screen-help"); };
+  document.getElementById("btn-contact").onclick = ()=>{ Audio_.uiClick(); showScreen("screen-contact"); };
+  document.getElementById("btn-score").onclick = ()=>{ Audio_.uiClick(); resetMode = false; document.getElementById("btn-reset-mode").textContent = "🗑 Reset"; renderScoreboard(); showScreen("screen-score"); };
+  document.getElementById("btn-continue").onclick = ()=>{ Audio_.uiClick(); renderProfileList(); showScreen("screen-continue"); };
+
+  function refreshContinueButtonState(){
+    document.getElementById("btn-continue").disabled = loadProfiles().length===0;
+  }
+  refreshContinueButtonState();
+
+  function renderProfileList(){
+    const wrap = document.getElementById("profile-list");
+    const list = loadProfiles().sort((a,b)=> b.lastPlayed - a.lastPlayed);
+    wrap.innerHTML = "";
+    if(list.length===0){ wrap.innerHTML = '<div class="empty-note">Belum ada nama tersimpan. Mulai game baru dulu, Kapten!</div>'; return; }
+    list.forEach(p=>{
+      const el = document.createElement("div");
+      el.className = "profile-item";
+      el.innerHTML = `<div><div class="profile-name">🏴‍☠️ ${escapeHtml(p.name)}</div><div class="profile-meta">Koin: ${p.highCoins||0}</div></div><div class="profile-score">${p.highScore||0}</div>`;
+      el.onclick = ()=>{ currentPlayer = p.name; startGame(); };
+      wrap.appendChild(el);
+    });
+  }
+  let resetMode = false;
+  function renderScoreboard(){
+    const wrap = document.getElementById("score-list");
+    const list = loadProfiles().sort((a,b)=> (b.highScore||0)-(a.highScore||0));
+    wrap.innerHTML = "";
+    if(list.length===0){ wrap.innerHTML = '<div class="empty-note">Belum ada skor. Main dulu yuk!</div>'; return; }
+    list.forEach((p,i)=>{
+      const el = document.createElement("div");
+      el.className = "lb-row" + (resetMode ? " reset-mode" : "");
+      el.innerHTML = `<div class="lb-rank">#${i+1}</div><div class="lb-name">${escapeHtml(p.name)}</div><div class="lb-score">${p.highScore||0}</div><button class="lb-delete-btn" title="Hapus">🗑</button>`;
+      el.querySelector(".lb-delete-btn").onclick = ()=> openResetConfirm(p.name);
+      wrap.appendChild(el);
+    });
+  }
+
+  const btnResetMode = document.getElementById("btn-reset-mode");
+  btnResetMode.onclick = ()=>{
+    Audio_.uiClick();
+    if(loadProfiles().length===0) return;
+    resetMode = !resetMode;
+    btnResetMode.textContent = resetMode ? "✕ Selesai" : "🗑 Reset";
+    renderScoreboard();
+  };
+
+  let pendingResetName = null;
+  const modalResetConfirm = document.getElementById("modal-reset-confirm");
+  function openResetConfirm(name){
+    pendingResetName = name;
+    document.getElementById("reset-target-name").textContent = name;
+    modalResetConfirm.classList.add("active");
+  }
+  document.getElementById("btn-reset-cancel").onclick = ()=>{ modalResetConfirm.classList.remove("active"); pendingResetName = null; };
+  document.getElementById("btn-reset-confirm").onclick = ()=>{
+    if(pendingResetName){
+      const list = loadProfiles().filter(p=> p.name.toLowerCase() !== pendingResetName.toLowerCase());
+      saveProfiles(list);
+      if(currentPlayer && currentPlayer.toLowerCase() === pendingResetName.toLowerCase()) currentPlayer = null;
+    }
+    modalResetConfirm.classList.remove("active");
+    pendingResetName = null;
+    renderScoreboard();
+    refreshContinueButtonState();
+  };
+  function escapeHtml(str){ const d = document.createElement("div"); d.textContent = str; return d.innerHTML; }
+
+  /* ================= NAME MODAL ================= */
+  const modalName = document.getElementById("modal-name");
+  const inputName = document.getElementById("input-name");
+  document.getElementById("btn-start").onclick = ()=>{
+    Audio_.unlock(); Audio_.uiClick();
+    inputName.value = "";
+    modalName.classList.add("active");
+    setTimeout(()=> inputName.focus(), 100);
+  };
+  document.getElementById("btn-cancel-name").onclick = ()=>{ modalName.classList.remove("active"); };
+  document.getElementById("btn-confirm-name").onclick = confirmName;
+  inputName.addEventListener("keydown", e=>{ if(e.key==="Enter") confirmName(); });
+  function confirmName(){
+    let name = inputName.value.trim();
+    if(!name){ name = "Kapten"+Math.floor(Math.random()*900+100); }
+    name = name.slice(0,16);
+    upsertProfile(name, {});
+    currentPlayer = name;
+    modalName.classList.remove("active");
+    startGame();
+  }
+
+  /* ================= ITEM ASSET MAP ================= */
+  const ITEM_SRC = {
+    coin: "assets/images/item-coin.svg",
+    key: "assets/images/item-key.svg",
+    potion: "assets/images/item-potion.svg",
+    gem: "assets/images/item-gem.svg",
+    star: "assets/images/item-star.svg",
+    bomb: "assets/images/item-bomb.svg",
+  };
+
+  /* ================= GAME STATE ================= */
+  const playfield = document.getElementById("playfield");
+  const chestImg = document.getElementById("chest-img");
+  const chestGlow = document.getElementById("chest-glow");
+  const hudCoins = document.getElementById("hud-coins");
+  const hudScore = document.getElementById("hud-score");
+  const energyBar = document.getElementById("energy-bar");
+  const comboTextEl = document.getElementById("combo-text");
+  const screenFlash = document.getElementById("screen-flash");
+
+  const GOOD_ITEMS = [
+    { key:"coin", value:10, weight:50, tier:0 },
+    { key:"key", value:15, weight:20, tier:1 },
+    { key:"potion", value:20, weight:15, heals:15, tier:1 },
+    { key:"gem", value:30, weight:10, tier:2 },
+    { key:"star", value:50, weight:5, tier:3 },
+  ];
+  const BAD_ITEM = { key:"bomb", damage:25 };
+  const BAD_WEIGHT_BASE = 18;
+  const MISS_PENALTY = 8; // energy lost when a good treasure is NOT caught
+
+  let state = null;
+  let rafId = null;
+  let spawnTimerId = null;
+  let distanceTimerId = null;
+
+  function resetState(){
+    state = { running:true, chestOpen:false, score:0, coins:0, distance:0, energy:100, combo:0, items:[], difficulty:1 };
+  }
+
+  function startGame(){
+    Audio_.unlock();
+    resetState();
+    hudCoins.textContent = "0";
+    hudScore.textContent = "0";
+    energyBar.style.width = "100%";
+    document.getElementById("overlay-gameover").classList.remove("active");
+    document.getElementById("overlay-pause").classList.remove("active");
+    document.querySelectorAll(".falling-item, .popup").forEach(n=>n.remove());
+    chestImg.src = "assets/images/chest-closed.svg";
+    showScreen("screen-game");
+    Audio_.startMusic();
+
+    const hint = document.getElementById("tap-hint");
+    hint.style.animation = "none"; void hint.offsetWidth; hint.style.animation = "";
+
+    spawnTimerId = setInterval(spawnItem, 900);
+    distanceTimerId = setInterval(()=>{
+      if(!state.running) return;
+      state.distance += 1;
+      state.difficulty = 1 + state.distance/40;
+      state.score = Math.floor(state.distance*2 + state.coins);
+      hudScore.textContent = state.score;
+    }, 500);
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function pickWeighted(arr){
+    const total = arr.reduce((s,i)=>s+i.weight,0);
+    let r = Math.random()*total;
+    for(const item of arr){ if(r<item.weight) return item; r -= item.weight; }
+    return arr[0];
+  }
+
+  function spawnItem(){
+    if(!state || !state.running) return;
+    const isBad = Math.random()*100 < Math.min(BAD_WEIGHT_BASE + state.difficulty*2, 42);
+    const type = isBad ? { ...BAD_ITEM, bad:true } : pickWeighted(GOOD_ITEMS);
+    const fieldW = playfield.clientWidth;
+    const fieldH = playfield.clientHeight;
+    const fromLeft = Math.random() < 0.5;
+    const startX = fromLeft ? -30 : fieldW + 30;
+    const centerX = fieldW/2;
+    const chestY = fieldH * 0.68; // lines up with grounded chest position
+    const startY = fieldH * (0.75 + Math.random()*0.15); // thrown up from lower sides
+    const arcHeight = 90 + Math.random()*60; // how high the toss arcs
+
+    const el = document.createElement("div");
+    el.className = "falling-item";
+    const img = document.createElement("img");
+    img.src = ITEM_SRC[type.key];
+    el.appendChild(img);
+    el.style.left = startX+"px";
+    el.style.top = startY+"px";
+    playfield.appendChild(el);
+
+    state.items.push({
+      el, type,
+      startX, startY, targetX:centerX, targetY:chestY,
+      dir: fromLeft?1:-1,
+      progress:0,
+      speed: (0.016+Math.random()*0.006) * Math.min(state.difficulty,2.4),
+      arcHeight,
+    });
+  }
+
+  function loop(){
+    if(!state || !state.running) return;
+    const fieldW = playfield.clientWidth;
+    const catchRadius = 0.88; // progress threshold (close to target) to resolve
+
+    for(let i=state.items.length-1;i>=0;i--){
+      const it = state.items[i];
+      it.progress += it.speed;
+      const p = Math.min(it.progress, 1);
+      // thrown arc: linear interpolation toward chest, with a parabolic lift (sin curve) simulating a toss
+      const x = it.startX + (it.targetX - it.startX) * p;
+      const y = it.startY + (it.targetY - it.startY) * p - Math.sin(p*Math.PI) * it.arcHeight;
+      it.el.style.left = x+"px";
+      it.el.style.top = y+"px";
+      it.curX = x; it.curY = y;
+
+      if(p >= catchRadius && !it.resolved){
+        it.resolved = true;
+        resolveCatch(it);
+      }
+      if(it.progress >= 1.15){
+        it.el.remove();
+        state.items.splice(i,1);
+      }
+    }
+    rafId = requestAnimationFrame(loop);
+  }
+
+  function resolveCatch(it){
+    const caught = state.chestOpen;
+    const px = it.curX, py = it.curY;
+
+    if(it.type.bad){
+      if(caught){
+        state.energy = Math.max(0, state.energy-it.type.damage);
+        energyBar.style.width = state.energy+"%";
+        state.combo = 0;
+        showCombo("");
+        spawnPopup(px, py, "-"+it.type.damage, "bad");
+        flashHit();
+        Audio_.bombExplode();
+        spawnShards(px, py, "#ff6b6b");
+        if(state.energy<=0){ endGame(); }
+      }else{
+        spawnPopup(px, py, "AMAN!", "neutral");
+        Audio_.safeBlock();
+      }
+    }else{
+      if(caught){
+        state.combo += 1;
+        const gained = it.type.value + Math.floor(state.combo/3)*5;
+        state.coins += gained;
+        state.score = Math.floor(state.distance*2 + state.coins);
+        hudCoins.textContent = state.coins;
+        hudScore.textContent = state.score;
+        if(it.type.heals){ state.energy = Math.min(100, state.energy+it.type.heals); energyBar.style.width = state.energy+"%"; }
+        spawnPopup(px, py, "+"+gained, "good");
+        Audio_.treasureEnter();
+        spawnShards(px, py, "#ffd968");
+        if(state.combo>=2) showCombo(state.combo+"x COMBO");
+        pulseChest();
+      }else{
+        // missed a good treasure -> energy decreases as penalty
+        state.combo = 0;
+        showCombo("");
+        state.energy = Math.max(0, state.energy - MISS_PENALTY);
+        energyBar.style.width = state.energy+"%";
+        spawnPopup(px, py, "-"+MISS_PENALTY, "bad");
+        Audio_.treasureDiscard();
+        if(state.energy<=0){ endGame(); }
+      }
+    }
+
+    it.el.style.transition = "opacity .2s, transform .2s";
+    it.el.style.opacity = "0";
+    it.el.style.transform = "translate(-50%,-50%) scale(1.3)";
+    setTimeout(()=> it.el.remove(), 200);
+    const idx = state.items.indexOf(it);
+    if(idx>-1) state.items.splice(idx,1);
+  }
+
+  function spawnShards(x,y,color){
+    for(let i=0;i<6;i++){
+      const s = document.createElement("div");
+      s.className = "shard";
+      s.style.left = x+"px"; s.style.top = y+"px";
+      s.style.background = color;
+      const ang = Math.random()*Math.PI*2;
+      const dist = 26+Math.random()*22;
+      const dx = Math.cos(ang)*dist, dy = Math.sin(ang)*dist;
+      s.style.transition = "transform .5s ease-out, opacity .5s ease-out";
+      playfield.appendChild(s);
+      requestAnimationFrame(()=>{
+        s.style.transform = `translate(${dx}px,${dy}px) rotate(${Math.random()*180}deg)`;
+        s.style.opacity = "0";
+      });
+      setTimeout(()=> s.remove(), 520);
+    }
+  }
+
+  function pulseChest(){
+    chestImg.style.transform = "scale(1.08)";
+    setTimeout(()=>{ chestImg.style.transform = ""; }, 140);
+  }
+
+  let comboHideTimer = null;
+  function showCombo(text){
+    if(!text){ comboTextEl.classList.remove("show"); return; }
+    comboTextEl.textContent = text;
+    comboTextEl.classList.add("show");
+    clearTimeout(comboHideTimer);
+    comboHideTimer = setTimeout(()=> comboTextEl.classList.remove("show"), 900);
+  }
+
+  function spawnPopup(x,y,text,cls){
+    const p = document.createElement("div");
+    p.className = "popup "+cls;
+    p.textContent = text;
+    p.style.left = x+"px";
+    p.style.top = y+"px";
+    playfield.appendChild(p);
+    setTimeout(()=> p.remove(), 950);
+  }
+
+  function flashHit(){
+    screenFlash.classList.remove("hit");
+    void screenFlash.offsetWidth;
+    screenFlash.classList.add("hit");
+    if(navigator.vibrate) navigator.vibrate(60);
+  }
+
+  /* ---- chest open/close via press ---- */
+  const gameScreen = document.getElementById("screen-game");
+  function openChest(e){
+    if(!state || !state.running) return;
+    state.chestOpen = true;
+    chestImg.src = "assets/images/chest-open.svg";
+    chestGlow.classList.add("on");
+    spawnPressRing(e);
+  }
+  function closeChest(){
+    if(!state) return;
+    state.chestOpen = false;
+    chestImg.src = "assets/images/chest-closed.svg";
+    chestGlow.classList.remove("on");
+  }
+  function spawnPressRing(e){
+    let x,y;
+    if(e && e.changedTouches && e.changedTouches[0]){ x=e.changedTouches[0].clientX; y=e.changedTouches[0].clientY; }
+    else if(e){ x=e.clientX; y=e.clientY; }
+    else return;
+    const rect = playfield.getBoundingClientRect();
+    const ring = document.createElement("div");
+    ring.className = "press-ring";
+    ring.style.left = (x-rect.left)+"px";
+    ring.style.top = (y-rect.top)+"px";
+    playfield.appendChild(ring);
+    setTimeout(()=> ring.remove(), 500);
+  }
+  gameScreen.addEventListener("pointerdown", (e)=>{
+    if(e.target.closest(".hud-round-btn")) return;
+    e.preventDefault();
+    Audio_.unlock();
+    openChest(e);
+  });
+  gameScreen.addEventListener("pointerup", closeChest);
+  gameScreen.addEventListener("pointercancel", closeChest);
+  gameScreen.addEventListener("pointerleave", closeChest);
+  document.addEventListener("contextmenu", (e)=> e.preventDefault());
+  document.addEventListener("dragstart", (e)=> e.preventDefault());
+  document.addEventListener("selectstart", (e)=> e.preventDefault());
+
+  /* ================= PAUSE / QUIT / GAMEOVER ================= */
+  document.getElementById("btn-pause").onclick = ()=>{
+    if(!state) return;
+    state.running = false;
+    closeChest();
+    Audio_.stopMusic();
+    document.getElementById("overlay-pause").classList.add("active");
+  };
+  document.getElementById("btn-resume").onclick = ()=>{
+    document.getElementById("overlay-pause").classList.remove("active");
+    if(!state) return;
+    state.running = true;
+    Audio_.startMusic();
+    rafId = requestAnimationFrame(loop);
+  };
+  document.getElementById("btn-quit").onclick = ()=>{ stopGame(); showScreen("screen-menu"); };
+  document.getElementById("btn-gohome").onclick = ()=>{ showScreen("screen-menu"); refreshContinueButtonState(); };
+  document.getElementById("btn-retry").onclick = ()=>{ startGame(); };
+  document.getElementById("btn-mute").onclick = (e)=>{
+    const on = Audio_.toggleMute();
+    e.target.textContent = on ? "🔊" : "🔇";
+  };
+
+  function stopGame(){
+    if(state) state.running = false;
+    clearInterval(spawnTimerId);
+    clearInterval(distanceTimerId);
+    cancelAnimationFrame(rafId);
+    Audio_.stopMusic();
+  }
+
+  function endGame(){
+    stopGame();
+    Audio_.gameOverJingle();
+    const finalScore = state.score;
+    const finalCoins = state.coins;
+    let isNewBest = false;
+    if(currentPlayer){
+      const prof = getProfile(currentPlayer) || {highScore:0, highCoins:0};
+      if(finalScore > (prof.highScore||0)){
+        isNewBest = true;
+        upsertProfile(currentPlayer, { highScore:finalScore, highCoins:Math.max(finalCoins, prof.highCoins||0) });
+      }else{
+        upsertProfile(currentPlayer, {});
+      }
+    }
+    const best = currentPlayer ? (getProfile(currentPlayer)||{}).highScore || finalScore : finalScore;
+    document.getElementById("final-score").textContent = finalScore;
+    document.getElementById("best-note").textContent = "Skor terbaik "+(currentPlayer||"")+": "+best;
+    document.getElementById("new-best-badge").classList.toggle("show", isNewBest);
+    if(isNewBest) setTimeout(()=> Audio_.newBest(), 500);
+    setTimeout(()=>{ document.getElementById("overlay-gameover").classList.add("active"); }, 250);
+    refreshContinueButtonState();
+  }
+
+  /* ================= AMBIENT DECOR ================= */
+  function buildStars(){
+    const field = document.getElementById("starfield");
+    const frag = document.createDocumentFragment();
+    for(let i=0;i<40;i++){
+      const s = document.createElement("div");
+      s.className = "star";
+      const size = Math.random()*3+1;
+      s.style.width = size+"px"; s.style.height = size+"px";
+      s.style.left = Math.random()*100+"%"; s.style.top = Math.random()*55+"%";
+      s.style.animationDelay = (Math.random()*2)+"s";
+      frag.appendChild(s);
+    }
+    field.appendChild(frag);
+  }
+  function buildClouds(){
+    const field = document.getElementById("cloudfield");
+    const positions = [ {top:"8%", w:90, dur:26}, {top:"16%", w:70, dur:34}, {top:"4%", w:60, dur:30} ];
+    positions.forEach((p,i)=>{
+      const c = document.createElement("div");
+      c.className = "cloud";
+      c.style.top = p.top; c.style.left = (10+i*30)+"%";
+      c.style.animationDuration = p.dur+"s";
+      c.innerHTML = `<svg width="${p.w}" height="${p.w*0.4}" viewBox="0 0 100 40"><ellipse cx="30" cy="24" rx="26" ry="14" fill="#fff"/><ellipse cx="55" cy="18" rx="22" ry="16" fill="#fff"/><ellipse cx="75" cy="26" rx="20" ry="12" fill="#fff"/></svg>`;
+      field.appendChild(c);
+    });
+  }
+  function buildPalms(){
+    playfield.insertAdjacentHTML("beforeend",
+      `<img class="palm" style="top:0%; left:-8%;" src="assets/images/palm.svg" alt="">
+       <img class="palm" style="top:2%; right:-10%; animation-delay:1s; transform:scaleX(-1);" src="assets/images/palm.svg" alt="">`);
+  }
+  buildStars();
+  buildClouds();
+  buildPalms();
+
+})();
+</script>
+</body>
+</html>
